@@ -11,6 +11,7 @@ from types import ModuleType
 from typing import Any
 from typing import Callable
 from typing import Generator
+from typing import Optional
 
 from loguru import logger
 
@@ -30,7 +31,7 @@ def find_objects(
             yield from find_module_objects(module, filter_func)
 
 
-def load_from_name(name: str, finder: PathEntryFinder) -> ModuleType | None:
+def load_from_name(name: str, finder: PathEntryFinder) -> Optional[ModuleType]:
     """Load a module from its name.
 
     Returns None if the module cannot be loaded.

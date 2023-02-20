@@ -1,5 +1,4 @@
 """A Python library used for discovering objects in a path."""
-# Path: src\pytest_create\discover.py
 
 import contextlib
 import importlib.util

@@ -18,6 +18,8 @@ Changelog = "https://github.com/56kyle/pytest-create/releases"
 [tool.poetry.dependencies]
 python = "^3.7"
 click = ">=8.0.1"
+loguru = "^0.6.0"
+pytest = "^7.2.1"
 
 [tool.poetry.dev-dependencies]
 Pygments = ">=2.10.0"
@@ -48,6 +50,9 @@ myst-parser = {version = ">=0.16.1"}
 [tool.poetry.scripts]
 pytest-create = "pytest_create.__main__:main"
 
+[tool.black]
+line-length = 88
+
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
 tests = ["tests", "*/tests"]
@@ -64,6 +69,12 @@ fail_under = 100
 profile = "black"
 force_single_line = true
 lines_after_imports = 2
+
+[tool.pytest.ini_options]
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 
 [tool.mypy]
 strict = true

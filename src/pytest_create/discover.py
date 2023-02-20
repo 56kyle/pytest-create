@@ -6,18 +6,20 @@ import importlib.util
 import inspect
 import pathlib
 import pkgutil
+from importlib.abc import MetaPathFinder
 from importlib.abc import PathEntryFinder
 from types import ModuleType
 from typing import Any
 from typing import Callable
 from typing import Generator
 from typing import Optional
+from typing import Union
 
 from loguru import logger
 
 
 def find_objects(
-    path: pathlib.Path, filter_func: Callable[[Any], bool] = None
+    path: pathlib.Path, filter_func: Optional[Callable[[Any], bool]] = None
 ) -> Generator[Any, None, None]:
     """Find all objects in a path.
 
@@ -31,24 +33,30 @@ def find_objects(
             yield from find_module_objects(module, filter_func)
 
 
-def load_from_name(name: str, finder: PathEntryFinder) -> Optional[ModuleType]:
+def load_from_name(
+    name: str, finder: Union[PathEntryFinder, MetaPathFinder]
+) -> Optional[ModuleType]:
     """Load a module from its name.
 
     Returns None if the module cannot be loaded.
     """
     logger.debug(f"Loading {name}")
     with contextlib.suppress(Exception):
-        spec = finder.find_spec(name)
+        spec = finder.find_spec(name, None)
         if spec is None:
             logger.error(f"Failed to load module {name}")
             return None
-        module = importlib.util.module_from_spec(spec)
+        module: ModuleType = importlib.util.module_from_spec(spec)
+        if spec.loader is None:
+            logger.error(f"Failed to load module {name}")
+            return None
         spec.loader.exec_module(module)
         return module
+    return None
 
 
 def find_module_objects(
-    module: ModuleType, filter_func: Callable[[Any], bool] = None
+    module: ModuleType, filter_func: Optional[Callable[[Any], bool]] = None
 ) -> Generator[Any, None, None]:
     """Find all objects in a module."""
     logger.debug(f"Finding objects in module {module}")

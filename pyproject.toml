@@ -59,7 +59,7 @@ tests = ["tests", "*/tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["pytest_create", "tests"]
+source = ["pytest_create", "example_package", "tests"]
 
 [tool.coverage.report]
 show_missing = true

@@ -2,14 +2,14 @@
 example_variable: str = ""
 
 
-def example_function() -> None:
+def example_function() -> bool:
     """Example function."""
-    pass
+    return True
 
 
 class ExampleClass:
     """Example class."""
 
-    def example_method(self):
+    def example_method(self) -> bool:
         """Example method."""
-        pass
+        return True

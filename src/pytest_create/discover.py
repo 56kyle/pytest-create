@@ -6,7 +6,6 @@ import inspect
 import os
 import pathlib
 import pkgutil
-from importlib.abc import Loader
 from importlib.abc import MetaPathFinder
 from importlib.abc import PathEntryFinder
 from types import ModuleType
@@ -15,7 +14,6 @@ from typing import AnyStr
 from typing import Callable
 from typing import Generator
 from typing import Iterable
-from typing import List
 from typing import Optional
 from typing import Union
 
@@ -32,18 +30,24 @@ def find_objects(
     This function looks for all packages and modules in a path,
     and then returns all objects within them.
     """
-    if isinstance(paths, Union[str, pathlib.Path]):
-        paths = [paths]
-    paths: List[str] = [os.path.abspath(path) for path in paths]
-    logger.debug(f"Finding objects in {paths}")
-    for importer, name, _ in pkgutil.walk_packages(path=paths, prefix=prefix):
+    paths_list: Optional[Iterable[str]]
+    if (
+        isinstance(paths, str)
+        or isinstance(paths, bytes)
+        or isinstance(paths, pathlib.Path)
+    ):
+        paths_list = [os.path.abspath(str(paths))]
+    else:
+        paths_list = [os.path.abspath(str(path)) for path in paths]
+    logger.debug(f"Finding objects in {paths_list}")
+    for importer, name, _ in pkgutil.walk_packages(path=paths_list, prefix=prefix):
         module = load_from_name(name, importer)
         if module:
             yield from find_module_objects(module, filter_func)
 
 
 def load_from_name(
-    name: str, finder: Union[PathEntryFinder, MetaPathFinder, Loader]
+    name: str, finder: Union[PathEntryFinder, MetaPathFinder]
 ) -> Optional[ModuleType]:
     """Load a module from its name.
 

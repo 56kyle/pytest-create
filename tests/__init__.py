@@ -1,1 +1,1 @@
-"""Test suite for the pytest_create package."""
+"""init file for tests."""

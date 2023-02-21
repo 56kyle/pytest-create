@@ -18,25 +18,25 @@ from tests.example_package.example_module import example_function
 from tests.example_package.example_module import example_variable
 
 
-def get_names(objects: list[Any]) -> list[Any]:
+def get_names(objects: List[Any]) -> List[Any]:
     return [getattr(obj, "__name__", None) for obj in objects]
 
 
 class TestFindObjects:
     def test_find_objects(self, example_package_dir: Path) -> None:
-        objects: list[Any] = list(find_objects(example_package_dir))
+        objects: List[Any] = list(find_objects(example_package_dir))
         assert example_function.__name__ in get_names(objects)
 
     def test_find_objects_with_prefix(self, example_package_dir: Path) -> None:
         """Tests the find_objects function with a prefix."""
-        objects: list[Any] = list(
+        objects: List[Any] = list(
             find_objects(example_package_dir, prefix="example_package.")
         )
         assert example_function.__name__ in get_names(objects)
 
     def test_find_objects_with_filter(self, example_package_dir: Path) -> None:
         """Tests the find_objects function with a filter."""
-        objects: list[Any] = list(
+        objects: List[Any] = list(
             find_objects(
                 example_package_dir, filter_func=lambda obj: isinstance(obj, str)
             )
@@ -47,24 +47,24 @@ class TestFindObjects:
 
     def test_find_objects_with_iterable(self, example_package_dir: Path) -> None:
         """Tests the find_objects function with an iterable."""
-        objects: list[Any] = list(find_objects([example_package_dir]))
+        objects: List[Any] = list(find_objects([example_package_dir]))
         assert example_function.__name__ in get_names(objects)
 
     def test_find_objects_with_str(self, example_package_dir: Path) -> None:
         """Tests the find_objects function with a string."""
-        objects: list[Any] = list(find_objects(str(example_package_dir)))
+        objects: List[Any] = list(find_objects(str(example_package_dir)))
         assert example_function.__name__ in get_names(objects)
 
     def test_find_objects_with_path(self, example_package_dir: Path) -> None:
         """Tests the find_objects function with a Path."""
-        objects: list[Any] = list(find_objects(example_package_dir))
+        objects: List[Any] = list(find_objects(example_package_dir))
         assert example_function.__name__ in get_names(objects)
 
     def test_find_objects_with_module_not_found(
         self, example_package_dir: Path, monkeypatch: MonkeyPatch
     ) -> None:
         monkeypatch.setattr("pytest_create.discover.load_from_name", lambda *args: None)
-        objects: list[Any] = list(find_objects(example_package_dir))
+        objects: List[Any] = list(find_objects(example_package_dir))
         assert not objects
 
     def test_find_objects_invalid_path(self) -> None:

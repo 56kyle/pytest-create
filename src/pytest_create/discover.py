@@ -3,14 +3,19 @@
 import contextlib
 import importlib.util
 import inspect
+import os
 import pathlib
 import pkgutil
+from importlib.abc import Loader
 from importlib.abc import MetaPathFinder
 from importlib.abc import PathEntryFinder
 from types import ModuleType
 from typing import Any
+from typing import AnyStr
 from typing import Callable
 from typing import Generator
+from typing import Iterable
+from typing import List
 from typing import Optional
 from typing import Union
 
@@ -18,22 +23,27 @@ from loguru import logger
 
 
 def find_objects(
-    path: pathlib.Path, filter_func: Optional[Callable[[Any], bool]] = None
+    paths: Union[Iterable[AnyStr | pathlib.Path], AnyStr | pathlib.Path],
+    prefix: str = "",
+    filter_func: Optional[Callable[[Any], bool]] = None,
 ) -> Generator[Any, None, None]:
     """Find all objects in a path.
 
     This function looks for all packages and modules in a path,
     and then returns all objects within them.
     """
-    logger.debug(f"Finding objects in {path}")
-    for importer, name, _ in pkgutil.walk_packages(path=[str(path)]):
+    if isinstance(paths, Union[str, pathlib.Path]):
+        paths = [paths]
+    paths: List[str] = [os.path.abspath(path) for path in paths]
+    logger.debug(f"Finding objects in {paths}")
+    for importer, name, _ in pkgutil.walk_packages(path=paths, prefix=prefix):
         module = load_from_name(name, importer)
         if module:
             yield from find_module_objects(module, filter_func)
 
 
 def load_from_name(
-    name: str, finder: Union[PathEntryFinder, MetaPathFinder]
+    name: str, finder: Union[PathEntryFinder, MetaPathFinder, Loader]
 ) -> Optional[ModuleType]:
     """Load a module from its name.
 
@@ -42,13 +52,10 @@ def load_from_name(
     logger.debug(f"Loading {name}")
     with contextlib.suppress(Exception):
         spec = finder.find_spec(name, None)
-        if spec is None:
+        if spec is None or spec.loader is None:
             logger.error(f"Failed to load module {name}")
             return None
         module: ModuleType = importlib.util.module_from_spec(spec)
-        if spec.loader is None:
-            logger.error(f"Failed to load module {name}")
-            return None
         spec.loader.exec_module(module)
         return module
     return None
@@ -62,11 +69,3 @@ def find_module_objects(
     for _, obj in inspect.getmembers(module):
         if filter_func is None or filter_func(obj):
             yield obj
-
-
-if __name__ == "__main__":
-    for obj in find_objects(pathlib.Path.cwd().parent):
-        try:
-            logger.info(f"{obj.__module__} - {obj.__name__}")
-        except AttributeError:
-            pass

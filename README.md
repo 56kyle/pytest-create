@@ -7,7 +7,7 @@
 
 [![Read the documentation at https://pytest-create.readthedocs.io/](https://img.shields.io/readthedocs/pytest-create/latest.svg?label=Read%20the%20Docs)][read the docs]
 [![Tests](https://github.com/56kyle/pytest-create/workflows/Tests/badge.svg)][tests]
-[![Codecov](https://codecov.io/gh/56kyle/pytest-create/branch/main/graph/badge.svg)][codecov]
+[![Codecov](https://codecov.io/gh/56kyle/pytest-create/branch/master/graph/badge.svg)][codecov]
 
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)][pre-commit]
 [![Black](https://img.shields.io/badge/code%20style-black-000000.svg)][black]
@@ -68,6 +68,6 @@ This project was generated from [@cjolowicz]'s [Hypermodern Python Cookiecutter]
 
 <!-- github-only -->
 
-[license]: https://github.com/56kyle/pytest-create/blob/main/LICENSE
-[contributor guide]: https://github.com/56kyle/pytest-create/blob/main/CONTRIBUTING.md
+[license]: https://github.com/56kyle/pytest-create/blob/master/LICENSE
+[contributor guide]: https://github.com/56kyle/pytest-create/blob/master/CONTRIBUTING.md
 [command-line reference]: https://pytest-create.readthedocs.io/en/latest/usage.html

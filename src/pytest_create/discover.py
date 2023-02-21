@@ -21,7 +21,7 @@ from loguru import logger
 
 
 def find_objects(
-    paths: Union[Iterable[AnyStr | pathlib.Path], AnyStr | pathlib.Path],
+    paths: Union[Iterable[Union[AnyStr, pathlib.Path]], AnyStr, pathlib.Path],
     prefix: str = "",
     filter_func: Optional[Callable[[Any], bool]] = None,
 ) -> Generator[Any, None, None]:

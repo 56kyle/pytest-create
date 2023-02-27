@@ -50,6 +50,9 @@ myst-parser = {version = ">=0.16.1"}
 [tool.poetry.scripts]
 pytest-create = "pytest_create.__main__:main"
 
+[tool.poetry.plugins."pytest"]
+pytest-create = "pytest_create.plugin"
+
 [tool.black]
 line-length = 88
 

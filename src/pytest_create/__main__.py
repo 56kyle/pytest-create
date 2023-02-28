@@ -12,7 +12,7 @@ from loguru import logger
 )
 @click.argument(
     "dst",
-    type=click.Path(file_okay=True, dir_okay=True, exists=True),
+    type=click.Path(file_okay=True, dir_okay=True),
     default="",
     required=False,
 )
@@ -20,12 +20,11 @@ def main(src: click.Path, dst: click.Path) -> None:
     """Create new unit tests for the specified source file or directory."""
     logger.debug("Running main from CLI")
     logger.debug(f"src - {src}\ndst - {dst}")
-    args: List[str] = ["--create"]
-    if src:
-        args.append(str(src))
-    if dst:
-        args.append(str(dst))
-    pytest.main(args=args, plugins=["pytest_create.plugin"])
+    dst_args: List[str] = [str(dst)] if dst else []
+    pytest.main(
+        args=[*dst_args, "--create" if not src else f"--create={str(src)}"],
+        plugins=["pytest_create.plugin"],
+    )
 
 
 if __name__ == "__main__":

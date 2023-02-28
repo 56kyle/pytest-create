@@ -42,3 +42,12 @@ def tmp_module(tmp_src: Path) -> Path:
     tmp_module: Path = tmp_src / "module.py"
     tmp_module.touch()
     return tmp_module
+
+
+@pytest.fixture
+def config(pytester: pytest.Pytester) -> pytest.Config:
+    tests_dir: Path = pytester.mkdir("tests")
+    (tests_dir / "unit_tests").mkdir()
+    config: pytest.Config = pytester.parseconfig()
+    config._rootpath = tests_dir / "unit_tests"
+    return config

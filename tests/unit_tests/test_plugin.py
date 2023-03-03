@@ -31,9 +31,17 @@ class TestGetDefaultSrc:
 
 
 class TestGetDefaultDst:
-    def test__get_default_dst_with_default_src(self, config: pytest.Config):
+    def test__get_default_dst_with_root_in_tests(self, config: pytest.Config):
         default_dst: Path = _get_default_dst(config=config)
         assert default_dst
+
+    def test__get_default_dst_with_root_outside_tests(
+        self, tests_dir: Path, config: pytest.Config, monkeypatch: pytest.MonkeyPatch
+    ):
+        monkeypatch.setattr(config, "_rootpath", tests_dir.parent)
+        default_dst: Path = _get_default_dst(config=config)
+        assert default_dst
+        assert default_dst == tests_dir
 
 
 class TestGetTestsDir:

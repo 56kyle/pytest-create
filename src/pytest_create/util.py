@@ -22,37 +22,35 @@ from loguru import logger
 
 def get_source_code_filter(src: pathlib.Path) -> Callable[[object], bool]:
     """Returns a filter for objects defined in a file under the 'src' path."""
+    return lambda obj: is_object_defined_under_path(obj=obj, src=src)
 
-    def is_object_defined_under_path(obj: object) -> bool:
-        """Filters for objects defined in a file under the 'src' path."""
-        try:
-            obj_file: Optional[str] = inspect.getsourcefile(obj)
-        except TypeError:
-            if isinstance(obj, type):
-                return obj.__module__ != "builtins"
-            return False
 
-        if obj_file is None:
-            return False
+def is_object_defined_under_path(obj: object, src: pathlib.Path) -> bool:
+    """Filters for objects defined in a file under the 'src' path."""
+    try:
+        obj_file: Optional[str] = inspect.getsourcefile(obj)
+    except TypeError:
+        if isinstance(obj, type):
+            return obj.__module__ != "builtins"
+        return False
 
-        obj_path = pathlib.Path(obj_file)
-        if not obj_path.is_absolute():
-            return False
+    if obj_file is None:
+        return False
 
-        abs_src: pathlib.Path = src if src.is_absolute() else src.resolve()
+    obj_path = pathlib.Path(obj_file)
+    if not obj_path.is_absolute():
+        return False
 
-        if not obj_path.parent.samefile(abs_src) and not obj_path.parent.is_relative_to(
-            abs_src
-        ):
-            return False
+    src: pathlib.Path = src if src.is_absolute() else src.resolve()
 
-        return (
-            obj_path.relative_to(abs_src)
-            if obj_path.is_absolute()
-            else obj_path in abs_src.iterdir()
-        )
+    if not obj_path.parent.samefile(src) and not obj_path.parent.is_relative_to(src):
+        return False
 
-    return is_object_defined_under_path
+    return (
+        bool(obj_path.relative_to(src))
+        if obj_path.is_absolute()
+        else obj_path in src.iterdir()
+    )
 
 
 def find_objects(

@@ -23,7 +23,7 @@ class ExampleClass:
         return True
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     print(importlib)
     print(ModuleType)
     print(coroutine)

@@ -1,18 +1,24 @@
 import importlib.util
+import inspect
 import pkgutil
 from importlib.abc import PathEntryFinder
 from importlib.machinery import ModuleSpec
 from pathlib import Path
 from types import ModuleType
 from typing import Any
+from typing import Callable
 from typing import List
 from typing import Optional
 
+import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
-from pytest_create.discover import find_module_objects
-from pytest_create.discover import find_objects
-from pytest_create.discover import load_from_name
+from pytest_create.util import SourceFileCompatible
+from pytest_create.util import find_module_objects
+from pytest_create.util import find_objects
+from pytest_create.util import get_source_code_filter
+from pytest_create.util import is_object_defined_under_path
+from pytest_create.util import load_from_name
 from tests.example_package.example_module import ExampleClass
 from tests.example_package.example_module import example_function
 from tests.example_package.example_module import example_variable
@@ -20,6 +26,61 @@ from tests.example_package.example_module import example_variable
 
 def get_names(objects: List[Any]) -> List[Any]:
     return [getattr(obj, "__name__", None) for obj in objects]
+
+
+class TestGetSourceCodeFilter:
+    def test_get_source_code_filter_with_objects(
+        self, example_package_dir: Path
+    ) -> None:
+        src_filter: Callable[[SourceFileCompatible], bool] = get_source_code_filter(
+            src=example_package_dir
+        )
+
+        objects: List[Any] = list(
+            find_objects(example_package_dir, filter_func=src_filter)
+        )
+        assert example_variable not in objects
+        assert example_function.__name__ in get_names(objects)
+        assert len(objects) == 2
+
+    def test_get_source_code_filter_with_no_source_file(
+        self, example_package_dir: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        src_filter: Callable[[SourceFileCompatible], bool] = get_source_code_filter(
+            src=example_package_dir
+        )
+        assert src_filter(example_function) is True
+        monkeypatch.setattr(inspect, "getsourcefile", lambda obj: None)
+        assert src_filter(example_function) is False
+
+
+class TestIsObjectDefinedUnderPath:
+    def test_is_object_defined_under_path_with_object_under_path(
+        self, example_package_dir: Path
+    ) -> None:
+        assert (
+            is_object_defined_under_path(obj=example_function, src=example_package_dir)
+            is True
+        )
+
+    def test_is_object_defined_under_path_with_object_under_relative_path(
+        self,
+        example_package_dir: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        tests_dir: Path,
+    ) -> None:
+        src_string: Optional[str] = inspect.getsourcefile(example_function)
+        assert src_string is not None
+        original_source_file: Path = Path(src_string)
+        monkeypatch.setattr(
+            inspect,
+            "getsourcefile",
+            lambda obj: original_source_file.relative_to(tests_dir),
+        )
+        assert (
+            is_object_defined_under_path(obj=example_function, src=example_package_dir)
+            is False
+        )
 
 
 class TestFindObjects:
@@ -63,7 +124,7 @@ class TestFindObjects:
     def test_find_objects_with_module_not_found(
         self, example_package_dir: Path, monkeypatch: MonkeyPatch
     ) -> None:
-        monkeypatch.setattr("pytest_create.discover.load_from_name", lambda *args: None)
+        monkeypatch.setattr("pytest_create.util.load_from_name", lambda *args: None)
         objects: List[Any] = list(find_objects(example_package_dir))
         assert not objects
 

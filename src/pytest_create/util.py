@@ -8,16 +8,75 @@ import pathlib
 import pkgutil
 from importlib.abc import MetaPathFinder
 from importlib.abc import PathEntryFinder
+from types import CodeType
+from types import FrameType
+from types import FunctionType
+from types import MethodType
 from types import ModuleType
+from types import TracebackType
 from typing import Any
 from typing import AnyStr
 from typing import Callable
 from typing import Generator
 from typing import Iterable
 from typing import Optional
+from typing import Type
+from typing import TypeVar
 from typing import Union
 
 from loguru import logger
+
+
+SourceFileCompatible = TypeVar(
+    "SourceFileCompatible",
+    ModuleType,
+    Type[Any],
+    MethodType,
+    FunctionType,
+    TracebackType,
+    FrameType,
+    CodeType,
+    Callable[..., Any],
+)
+
+
+def get_source_code_filter(src: pathlib.Path) -> Callable[[SourceFileCompatible], bool]:
+    """Returns a filter for objects defined in a file under the 'src' path."""
+    return lambda obj: is_object_defined_under_path(obj=obj, src=src)
+
+
+def is_object_defined_under_path(obj: SourceFileCompatible, src: pathlib.Path) -> bool:
+    """Filters for objects defined in a file under the 'src' path."""
+    try:
+        obj_file: Optional[str] = inspect.getsourcefile(obj)
+    except TypeError:
+        if isinstance(obj, type):
+            return obj.__module__ != "builtins"
+        return False
+
+    if obj_file is None:
+        return False
+
+    obj_path = pathlib.Path(obj_file)
+    if not obj_path.is_absolute():
+        return False
+
+    src_path: pathlib.Path = src if src.is_absolute() else src.resolve()
+
+    try:
+        obj_path.parent.relative_to(src_path)
+        relative_to: bool = True
+    except ValueError:
+        relative_to = False
+
+    if not obj_path.parent.samefile(src_path) and not relative_to:
+        return False
+
+    return (
+        bool(obj_path.relative_to(src_path))
+        if obj_path.is_absolute()
+        else obj_path in src_path.iterdir()
+    )
 
 
 def find_objects(

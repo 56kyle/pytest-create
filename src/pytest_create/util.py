@@ -63,9 +63,13 @@ def is_object_defined_under_path(obj: SourceFileCompatible, src: pathlib.Path) -
 
     src_path: pathlib.Path = src if src.is_absolute() else src.resolve()
 
-    if not obj_path.parent.samefile(src_path) and not obj_path.parent.is_relative_to(
-        src_path
-    ):
+    try:
+        obj_path.parent.relative_to(src_path)
+        relative_to: bool = True
+    except ValueError:
+        relative_to = False
+
+    if not obj_path.parent.samefile(src_path) and not relative_to:
         return False
 
     return (

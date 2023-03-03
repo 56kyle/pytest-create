@@ -20,6 +20,41 @@ from typing import Union
 from loguru import logger
 
 
+def get_source_code_filter(src: pathlib.Path) -> Callable[[object], bool]:
+    """Returns a filter for objects defined in a file under the 'src' path."""
+
+    def is_object_defined_under_path(obj: object) -> bool:
+        """Filters for objects defined in a file under the 'src' path."""
+        try:
+            obj_file: Optional[str] = inspect.getsourcefile(obj)
+        except TypeError:
+            if isinstance(obj, type):
+                return obj.__module__ != "builtins"
+            return False
+
+        if obj_file is None:
+            return False
+
+        obj_path = pathlib.Path(obj_file)
+        if not obj_path.is_absolute():
+            return False
+
+        abs_src: pathlib.Path = src if src.is_absolute() else src.resolve()
+
+        if not obj_path.parent.samefile(abs_src) and not obj_path.parent.is_relative_to(
+            abs_src
+        ):
+            return False
+
+        return (
+            obj_path.relative_to(abs_src)
+            if obj_path.is_absolute()
+            else obj_path in abs_src.iterdir()
+        )
+
+    return is_object_defined_under_path
+
+
 def find_objects(
     paths: Union[Iterable[Union[AnyStr, pathlib.Path]], AnyStr, pathlib.Path],
     prefix: str = "",

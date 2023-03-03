@@ -9,9 +9,25 @@ from pytest_create.plugin import is_in_tests_dir
 
 
 class TestGetDefaultSrc:
-    def test__get_default_src_with_cwd_outside_tests(self, config: pytest.Config):
-        default_src: Path = _get_default_src(config)
+    def test__get_default_src_with_no_tests(self, pytester: pytest.Pytester):
+        default_src: Path = _get_default_src(config=pytester.parseconfig())
         assert default_src
+        assert default_src == Path.cwd()
+
+    def test__get_default_src_with_cwd_inside_tests(
+        self, pytester: pytest.Pytester, config: pytest.Config
+    ):
+        original_path: Path = pytester.path
+        pytester._path = pytester.path / "tests" / "unit_tests"
+        pytester.chdir()
+        default_src: Path = _get_default_src(config=config)
+        assert default_src
+        assert default_src == original_path.parent
+
+    def test__get_default_src_with_cwd_outside_tests(self, config: pytest.Config):
+        default_src: Path = _get_default_src(config=config)
+        assert default_src
+        assert default_src == Path.cwd()
 
 
 class TestGetDefaultDst:

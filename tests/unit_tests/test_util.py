@@ -5,6 +5,7 @@ from importlib.machinery import ModuleSpec
 from pathlib import Path
 from types import ModuleType
 from typing import Any
+from typing import Callable
 from typing import List
 from typing import Optional
 
@@ -12,6 +13,7 @@ from _pytest.monkeypatch import MonkeyPatch
 
 from pytest_create.util import find_module_objects
 from pytest_create.util import find_objects
+from pytest_create.util import get_source_code_filter
 from pytest_create.util import load_from_name
 from tests.example_package.example_module import ExampleClass
 from tests.example_package.example_module import example_function
@@ -20,6 +22,27 @@ from tests.example_package.example_module import example_variable
 
 def get_names(objects: List[Any]) -> List[Any]:
     return [getattr(obj, "__name__", None) for obj in objects]
+
+
+class TestGetSourceCodeFilter:
+    def test_get_source_code_filter(self, example_package_dir: Path):
+        src_filter: Callable[[object], bool] = get_source_code_filter(
+            src=example_package_dir
+        )
+        assert src_filter
+
+    def test_get_source_code_filter_with_objects(self, example_package_dir: Path):
+        src_filter: Callable[[object], bool] = get_source_code_filter(
+            src=example_package_dir
+        )
+        assert src_filter
+
+        objects: List[Any] = list(
+            find_objects(example_package_dir, filter_func=src_filter)
+        )
+        assert example_variable not in objects
+        assert example_function.__name__ in get_names(objects)
+        assert len(objects) == 2
 
 
 class TestFindObjects:

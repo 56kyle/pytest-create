@@ -1,6 +1,7 @@
 """The pytest-create pytest plugin."""
 from pathlib import Path
 from typing import List
+from typing import Optional
 from typing import Tuple
 from typing import Union
 
@@ -50,7 +51,9 @@ def pytest_collection_modifyitems(
 def _get_default_src(config: pytest.Config) -> Path:
     """Get the default source directory path."""
     logger.debug("_get_default_src")
-    tests_dir: Path = _get_tests_dir(config=config)
+    tests_dir: Optional[Path] = _get_tests_dir(config=config)
+    if tests_dir is None:
+        return Path.cwd()
     if is_in_tests_dir(Path.cwd()):
         return tests_dir.parent.parent
     return Path.cwd()
@@ -68,7 +71,8 @@ def _get_default_dst(config: pytest.Config) -> Path:
     return _get_tests_dir(config=config)
 
 
-def _get_tests_dir(config: pytest.Config) -> Path:
+def _get_tests_dir(config: pytest.Config) -> Optional[Path]:
+    """Finds the tests directory and returns it."""
     resolved_root: Path = config.rootpath.resolve()
     if is_in_tests_dir(resolved_root):
         lower_case_path: Path = Path(*[part.lower() for part in resolved_root.parts])
@@ -76,6 +80,7 @@ def _get_tests_dir(config: pytest.Config) -> Path:
     else:
         for path in resolved_root.glob("**/[Tt]ests"):
             return path
+    return None
 
 
 def is_in_tests_dir(path: Path) -> bool:

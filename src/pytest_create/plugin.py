@@ -11,7 +11,7 @@ from loguru import logger
 from pytest_create.create import create_tests
 
 
-def pytest_addoption(parser: pytest.Parser):
+def pytest_addoption(parser: pytest.Parser) -> None:
     """Adds pytest-create plugin options to the pytest CLI."""
     logger.debug("pytest_addoption")
     group = parser.getgroup("Create")
@@ -68,7 +68,10 @@ def _get_default_dst(config: pytest.Config) -> Path:
     logger.debug("_get_default_dst")
     if is_in_tests_dir(config.rootpath):
         return config.rootpath
-    return _get_tests_dir(config=config)
+    tests_dir: Optional[Path] = _get_tests_dir(config=config)
+    if tests_dir is None:
+        return config.rootpath
+    return tests_dir
 
 
 def _get_tests_dir(config: pytest.Config) -> Optional[Path]:

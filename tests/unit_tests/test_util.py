@@ -13,6 +13,7 @@ from typing import Optional
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
+from pytest_create.util import SourceFileCompatible
 from pytest_create.util import find_module_objects
 from pytest_create.util import find_objects
 from pytest_create.util import get_source_code_filter
@@ -28,17 +29,12 @@ def get_names(objects: List[Any]) -> List[Any]:
 
 
 class TestGetSourceCodeFilter:
-    def test_get_source_code_filter(self, example_package_dir: Path):
-        src_filter: Callable[[object], bool] = get_source_code_filter(
+    def test_get_source_code_filter_with_objects(
+        self, example_package_dir: Path
+    ) -> None:
+        src_filter: Callable[[SourceFileCompatible], bool] = get_source_code_filter(
             src=example_package_dir
         )
-        assert src_filter
-
-    def test_get_source_code_filter_with_objects(self, example_package_dir: Path):
-        src_filter: Callable[[object], bool] = get_source_code_filter(
-            src=example_package_dir
-        )
-        assert src_filter
 
         objects: List[Any] = list(
             find_objects(example_package_dir, filter_func=src_filter)
@@ -49,8 +45,8 @@ class TestGetSourceCodeFilter:
 
     def test_get_source_code_filter_with_no_source_file(
         self, example_package_dir: Path, monkeypatch: pytest.MonkeyPatch
-    ):
-        src_filter: Callable[[object], bool] = get_source_code_filter(
+    ) -> None:
+        src_filter: Callable[[SourceFileCompatible], bool] = get_source_code_filter(
             src=example_package_dir
         )
         assert src_filter(example_function) is True
@@ -61,7 +57,7 @@ class TestGetSourceCodeFilter:
 class TestIsObjectDefinedUnderPath:
     def test_is_object_defined_under_path_with_object_under_path(
         self, example_package_dir: Path
-    ):
+    ) -> None:
         assert (
             is_object_defined_under_path(obj=example_function, src=example_package_dir)
             is True
@@ -72,8 +68,10 @@ class TestIsObjectDefinedUnderPath:
         example_package_dir: Path,
         monkeypatch: pytest.MonkeyPatch,
         tests_dir: Path,
-    ):
-        original_source_file: Path = Path(inspect.getsourcefile(example_function))
+    ) -> None:
+        src_string: Optional[str] = inspect.getsourcefile(example_function)
+        assert src_string is not None
+        original_source_file: Path = Path(src_string)
         monkeypatch.setattr(
             inspect,
             "getsourcefile",

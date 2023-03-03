@@ -1,2 +1,2 @@
-def test_create_tests():
+def test_create_tests() -> None:
     assert True

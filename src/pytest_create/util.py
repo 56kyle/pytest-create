@@ -99,9 +99,16 @@ def find_objects(
     else:
         paths_list = [os.path.abspath(str(path)) for path in paths]
     logger.debug(f"Finding objects in {paths_list}")
-    for importer, name, _ in pkgutil.walk_packages(path=paths_list, prefix=prefix):
+    for importer, name, ispkg in pkgutil.walk_packages(path=paths_list, prefix=prefix):
         module = load_from_name(name, importer)
         if module:
+            if ispkg:
+                for sub_module_info in pkgutil.iter_modules(module.__path__):
+                    sub_module: ModuleType = load_from_name(
+                        sub_module_info.name, sub_module_info.module_finder
+                    )
+                    if sub_module is not None:
+                        yield from find_module_objects(sub_module, filter_func)
             yield from find_module_objects(module, filter_func)
 
 

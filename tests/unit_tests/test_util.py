@@ -22,6 +22,12 @@ from pytest_create.util import load_from_name
 from tests.example_package.example_module import ExampleClass
 from tests.example_package.example_module import example_function
 from tests.example_package.example_module import example_variable
+from tests.example_package.example_sub_package.example_sub_module import (
+    example_function_b,
+)
+from tests.example_package.example_sub_package.example_sub_module import (
+    example_variable_b,
+)
 
 
 def get_names(objects: List[Any]) -> List[Any]:
@@ -41,7 +47,9 @@ class TestGetSourceCodeFilter:
         )
         assert example_variable not in objects
         assert example_function.__name__ in get_names(objects)
-        assert len(objects) == 2
+        assert example_variable_b not in objects
+        assert example_function_b.__name__ in get_names(objects)
+        assert len(objects) == 4
 
     def test_get_source_code_filter_with_no_source_file(
         self, example_package_dir: Path, monkeypatch: pytest.MonkeyPatch
@@ -87,6 +95,15 @@ class TestFindObjects:
     def test_find_objects(self, example_package_dir: Path) -> None:
         objects: List[Any] = list(find_objects(example_package_dir))
         assert example_function.__name__ in get_names(objects)
+
+    def test_find_source_objects(self, example_package_dir: Path) -> None:
+        objects: List[Any] = list(
+            find_objects(
+                example_package_dir,
+                filter_func=get_source_code_filter(example_package_dir),
+            )
+        )
+        assert len(objects) == len(set(objects))
 
     def test_find_objects_with_prefix(self, example_package_dir: Path) -> None:
         """Tests the find_objects function with a prefix."""

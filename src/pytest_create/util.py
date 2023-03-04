@@ -15,10 +15,10 @@ from types import MethodType
 from types import ModuleType
 from types import TracebackType
 from typing import Any
-from typing import AnyStr
 from typing import Callable
 from typing import Generator
 from typing import Iterable
+from typing import List
 from typing import Optional
 from typing import Type
 from typing import TypeVar
@@ -38,6 +38,9 @@ SourceFileCompatible = TypeVar(
     CodeType,
     Callable[..., Any],
 )
+
+
+SupportsPath = TypeVar("SupportsPath", str, pathlib.Path)
 
 
 def get_source_code_filter(src: pathlib.Path) -> Callable[[SourceFileCompatible], bool]:
@@ -79,8 +82,18 @@ def is_object_defined_under_path(obj: SourceFileCompatible, src: pathlib.Path) -
     )
 
 
+def standardize_paths(paths: Union[Iterable[SupportsPath], SupportsPath]) -> List[str]:
+    """Standardizes the input for paths for use in pkgutil methods."""
+    paths_list: Optional[Iterable[str]]
+    if isinstance(paths, str):
+        return [os.path.abspath(str(paths))]
+    if isinstance(paths, pathlib.Path):
+        return [os.path.abspath(str(paths))]
+    return [os.path.abspath(str(path)) for path in paths]
+
+
 def find_objects(
-    paths: Union[Iterable[Union[AnyStr, pathlib.Path]], AnyStr, pathlib.Path],
+    paths: Union[Iterable[SupportsPath], SupportsPath],
     prefix: str = "",
     filter_func: Optional[Callable[[Any], bool]] = None,
 ) -> Generator[Any, None, None]:
@@ -89,27 +102,40 @@ def find_objects(
     This function looks for all packages and modules in a path,
     and then returns all objects within them.
     """
-    paths_list: Optional[Iterable[str]]
-    if (
-        isinstance(paths, str)
-        or isinstance(paths, bytes)
-        or isinstance(paths, pathlib.Path)
+    for module in find_modules(paths=standardize_paths(paths), prefix=prefix):
+        yield from find_module_objects(module=module, filter_func=filter_func)
+
+
+def find_modules(
+    paths: Union[Iterable[SupportsPath], SupportsPath],
+    prefix: str = "",
+) -> Generator[ModuleType, None, None]:
+    """Find all objects in a path.
+
+    This function looks for all packages and modules in a path,
+    and then returns all objects within them.
+    """
+    logger.debug(f"Finding objects in {paths}")
+    for importer, name, ispkg in pkgutil.walk_packages(
+        path=standardize_paths(paths), prefix=prefix
     ):
-        paths_list = [os.path.abspath(str(paths))]
-    else:
-        paths_list = [os.path.abspath(str(path)) for path in paths]
-    logger.debug(f"Finding objects in {paths_list}")
-    for importer, name, ispkg in pkgutil.walk_packages(path=paths_list, prefix=prefix):
         module = load_from_name(name, importer)
         if module:
             if ispkg:
-                for sub_module_info in pkgutil.iter_modules(module.__path__):
-                    sub_module: ModuleType = load_from_name(
-                        sub_module_info.name, sub_module_info.module_finder
-                    )
-                    if sub_module is not None:
-                        yield from find_module_objects(sub_module, filter_func)
-            yield from find_module_objects(module, filter_func)
+                yield from find_sub_modules(module.__path__)
+            yield module
+
+
+def find_sub_modules(
+    paths: Union[Iterable[SupportsPath], SupportsPath]
+) -> Generator[ModuleType, None, None]:
+    """Iterates over all submodules of the provided module if it is a package."""
+    for sub_module_info in pkgutil.iter_modules(path=standardize_paths(paths)):
+        sub_module: Optional[ModuleType] = load_from_name(
+            sub_module_info.name, sub_module_info.module_finder
+        )
+        if sub_module is not None:
+            yield sub_module
 
 
 def load_from_name(

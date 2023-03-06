@@ -51,7 +51,7 @@ def get_source_code_filter(src: pathlib.Path) -> Callable[[SourceFileCompatible]
     )
 
 
-def is_src_object(obj: SourceFileCompatible) -> bool:
+def is_src_object(obj: Any) -> bool:
     """Returns if obj is a source code definition or not."""
     if inspect.ismodule(obj):
         # If the object is a module, check if its __file__ attribute is not None
@@ -180,7 +180,7 @@ def load_from_name(
     """
     logger.debug(f"Loading {name}")
     with contextlib.suppress(Exception):
-        spec: ModuleSpec = finder.find_spec(name, None)
+        spec: Optional[ModuleSpec] = finder.find_spec(name, None)
         if spec is None or spec.loader is None:
             logger.error(f"Failed to load module {name}")
             return None

@@ -92,6 +92,25 @@ class TestIsSrcObject:
     def test_is_src_object_with_builtin_class(self) -> None:
         assert is_src_object(builtins.Exception) is False
 
+    def test_is_src_object_with_module_with_file(self) -> None:
+        assert is_src_object(pytest_create.util) is True
+
+    def test_is_src_object_with_module_with_no_file(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        assert is_src_object(inspect) is True
+        monkeypatch.setattr(inspect, "__file__", None)
+        assert is_src_object(inspect) is False
+
+    def test_is_src_object_with_code(self) -> None:
+        assert is_src_object(is_src_object.__code__)
+
+    def test_is_src_object_with_frame(self) -> None:
+        assert is_src_object(inspect.currentframe())
+
+    def test_is_src_object_with_other(self) -> None:
+        assert is_src_object(int(2)) is False
+
 
 class TestIsObjectDefinedUnderPath:
     def test_is_object_defined_under_path_with_object_under_path(

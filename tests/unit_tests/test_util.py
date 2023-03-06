@@ -1,3 +1,4 @@
+import builtins
 import importlib.util
 import inspect
 import pkgutil
@@ -80,10 +81,16 @@ class TestIsSrcObject:
         assert is_src_object(TestIsSrcObject) is True
 
     def test_is_src_object_with_imported_function(self) -> None:
-        assert is_src_object(pkgutil.walk_packages) is False
+        assert is_src_object(pkgutil.walk_packages) is True
 
     def test_is_src_object_with_imported_class(self) -> None:
-        assert is_src_object(ModuleType) is False
+        assert is_src_object(pkgutil.ImpImporter) is True
+
+    def test_is_src_object_with_builtin_function(self) -> None:
+        assert is_src_object(builtins.set) is False
+
+    def test_is_src_object_with_builtin_class(self) -> None:
+        assert is_src_object(builtins.Exception) is False
 
 
 class TestIsObjectDefinedUnderPath:

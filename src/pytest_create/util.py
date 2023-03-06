@@ -8,6 +8,7 @@ import pathlib
 import pkgutil
 from importlib.abc import MetaPathFinder
 from importlib.abc import PathEntryFinder
+from importlib.machinery import ModuleSpec
 from types import CodeType
 from types import FrameType
 from types import FunctionType
@@ -45,7 +46,41 @@ SupportsPath = TypeVar("SupportsPath", str, pathlib.Path)
 
 def get_source_code_filter(src: pathlib.Path) -> Callable[[SourceFileCompatible], bool]:
     """Returns a filter for objects defined in a file under the 'src' path."""
-    return lambda obj: is_object_defined_under_path(obj=obj, src=src)
+    return lambda obj: is_object_defined_under_path(obj=obj, src=src) and is_src_object(
+        obj
+    )
+
+
+def is_src_object(obj: SourceFileCompatible) -> bool:
+    """Returns if obj is a source code definition or not."""
+    if inspect.ismodule(obj):
+        # If the object is a module, check if its __file__ attribute is not None
+        return getattr(obj, "__file__", None) is not None
+
+    elif inspect.isfunction(obj) or inspect.isclass(obj) or isinstance(obj, type):
+        # If the object is a function, class, or type,
+        # get the module where it was defined
+        module: Optional[ModuleType] = inspect.getmodule(obj)
+        if module is None:
+            # If the module is None,
+            # it means that the object was defined in the __main__ module
+            return True
+        else:
+            # Check if the module's __file__ attribute is not None
+            return getattr(module, "__file__", None) is not None
+
+    elif isinstance(obj, CodeType):
+        # If the object is a code object, check its co_filename attribute
+        return obj.co_filename is not None
+
+    elif isinstance(obj, FrameType):
+        # If the object is a frame,
+        # check if its f_code attribute corresponds to a source code object
+        return is_src_object(obj.f_code)
+
+    else:
+        # For all other types of objects, assume they are not source objects
+        return False
 
 
 def is_object_defined_under_path(obj: SourceFileCompatible, src: pathlib.Path) -> bool:
@@ -66,20 +101,18 @@ def is_object_defined_under_path(obj: SourceFileCompatible, src: pathlib.Path) -
 
     src_path: pathlib.Path = src if src.is_absolute() else src.resolve()
 
+    if is_relative_to(obj_path, src_path):
+        return True
+    return obj_path.parent.samefile(src_path)
+
+
+def is_relative_to(path: pathlib.Path, other: pathlib.Path) -> bool:
+    """The same as pathlib.Path.is_relative_to but usable in python 3.6."""
     try:
-        obj_path.parent.relative_to(src_path)
-        relative_to: bool = True
+        path.relative_to(other)
     except ValueError:
-        relative_to = False
-
-    if not obj_path.parent.samefile(src_path) and not relative_to:
         return False
-
-    return (
-        bool(obj_path.relative_to(src_path))
-        if obj_path.is_absolute()
-        else obj_path in src_path.iterdir()
-    )
+    return True
 
 
 def standardize_paths(paths: Union[Iterable[SupportsPath], SupportsPath]) -> List[str]:
@@ -147,7 +180,7 @@ def load_from_name(
     """
     logger.debug(f"Loading {name}")
     with contextlib.suppress(Exception):
-        spec = finder.find_spec(name, None)
+        spec: ModuleSpec = finder.find_spec(name, None)
         if spec is None or spec.loader is None:
             logger.error(f"Failed to load module {name}")
             return None
@@ -161,7 +194,7 @@ def find_module_objects(
     module: ModuleType, filter_func: Optional[Callable[[Any], bool]] = None
 ) -> Generator[Any, None, None]:
     """Find all objects in a module."""
-    logger.debug(f"Finding objects in module {module}")
+    logger.debug(f"Searching {module.__name__}...")
     for _, obj in inspect.getmembers(module):
         if filter_func is None or filter_func(obj):
             yield obj

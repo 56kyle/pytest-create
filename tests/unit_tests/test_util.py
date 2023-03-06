@@ -16,6 +16,7 @@ import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
 import pytest_create.util
+import tests.example_package.example_module
 from pytest_create.util import SourceFileCompatible
 from pytest_create.util import find_module_objects
 from pytest_create.util import find_modules
@@ -23,9 +24,10 @@ from pytest_create.util import find_objects
 from pytest_create.util import find_sub_modules
 from pytest_create.util import get_source_code_filter
 from pytest_create.util import is_object_defined_under_path
+from pytest_create.util import is_src_object
 from pytest_create.util import load_from_name
 from pytest_create.util import standardize_paths
-from tests.example_package.example_module import ExampleClass
+from tests.example_package.example_module import ExampleClassA
 from tests.example_package.example_module import example_function
 from tests.example_package.example_module import example_variable
 from tests.example_package.example_sub_package.example_sub_module import (
@@ -65,7 +67,23 @@ class TestGetSourceCodeFilter:
         )
         assert src_filter(example_function) is True
         monkeypatch.setattr(inspect, "getsourcefile", lambda obj: None)
-        assert src_filter(example_function) is False
+        assert (
+            src_filter(tests.example_package.example_module.example_function) is False
+        )
+
+
+class TestIsSrcObject:
+    def test_is_src_object_with_src_function(self) -> None:
+        assert is_src_object(get_names) is True
+
+    def test_is_src_object_with_src_class(self) -> None:
+        assert is_src_object(TestIsSrcObject) is True
+
+    def test_is_src_object_with_imported_function(self) -> None:
+        assert is_src_object(pkgutil.walk_packages) is False
+
+    def test_is_src_object_with_imported_class(self) -> None:
+        assert is_src_object(ModuleType) is False
 
 
 class TestIsObjectDefinedUnderPath:
@@ -147,7 +165,7 @@ class TestFindObjects:
         )
         assert example_variable in objects
         assert example_function.__name__ not in get_names(objects)
-        assert ExampleClass not in objects
+        assert ExampleClassA not in objects
 
     def test_find_objects_with_iterable(self, example_package_dir: Path) -> None:
         """Tests the find_objects function with an iterable."""
@@ -231,7 +249,7 @@ class TestLoadFromName:
         module = load_from_name("example_module", finder)
         assert module is not None
         assert callable(module.example_function)
-        assert isinstance(module.ExampleClass, type)
+        assert isinstance(module.ExampleClassA, type)
         assert isinstance(module.example_variable, str)
 
     def test_load_from_name_with_spec_not_found(
@@ -267,4 +285,4 @@ def test_find_module_objects(example_module_spec: ModuleSpec) -> None:
     objects: List[Any] = list(find_module_objects(module))
     assert example_function.__name__ in get_names(objects)
     assert example_variable in objects
-    assert ExampleClass.__name__ in get_names(objects)
+    assert ExampleClassA.__name__ in get_names(objects)

@@ -11,7 +11,7 @@ def example_function() -> bool:
     return True
 
 
-class ExampleClass:
+class ExampleClassA:
     """Example class."""
 
     def example_method(self) -> bool:

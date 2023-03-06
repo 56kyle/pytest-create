@@ -22,7 +22,7 @@ def test_example_function() -> None:
 
 
 def test_example_class() -> None:
-    """Tests the ExampleClass class."""
+    """Tests the ExampleClassA class."""
     assert isinstance(ExampleClassB, type)
     assert ExampleClassB()
 

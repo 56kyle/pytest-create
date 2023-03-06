@@ -39,7 +39,7 @@ def test_main_with_fake_dst(runner: CliRunner) -> None:
 
 
 def test_main_with_custom_src_and_dir(runner: CliRunner) -> None:
-    result: Result = runner.invoke(main, args=["./src", "./tests"])
+    result: Result = runner.invoke(main, args=["../src", "."])
     assert result.exit_code == 0
 
 

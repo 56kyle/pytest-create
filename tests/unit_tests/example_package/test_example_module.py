@@ -1,6 +1,6 @@
 from types import MethodType
 
-from tests.example_package.example_module import ExampleClass
+from tests.example_package.example_module import ExampleClassA
 from tests.example_package.example_module import example_function
 from tests.example_package.example_module import example_variable
 
@@ -17,13 +17,13 @@ def test_example_function() -> None:
     assert example_function() is True
 
 
-def test_example_class() -> None:
-    """Tests the ExampleClass class."""
-    assert isinstance(ExampleClass, type)
-    assert ExampleClass()
+def test_example_class_a() -> None:
+    """Tests the ExampleClassA class."""
+    assert isinstance(ExampleClassA, type)
+    assert ExampleClassA()
 
 
 def test_example_method() -> None:
     """Tests the example_method method."""
-    assert isinstance(ExampleClass().example_method, MethodType)
-    assert ExampleClass().example_method() is True
+    assert isinstance(ExampleClassA().example_method, MethodType)
+    assert ExampleClassA().example_method() is True

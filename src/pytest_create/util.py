@@ -190,6 +190,20 @@ def load_from_name(
     return None
 
 
+def load_from_file(path: pathlib.Path) -> Optional[ModuleType]:
+    """Loads the module located at the given path."""
+    logger.debug(f"Loading {path}")
+    spec: Optional[ModuleSpec] = importlib.util.spec_from_file_location(
+        name=path.stem, location=str(path)
+    )
+    if spec is None or spec.loader is None:
+        logger.error(f"Failed to load module {path}")
+        return None
+    module: ModuleType = importlib.util.module_from_spec(spec=spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def find_module_objects(
     module: ModuleType, filter_func: Optional[Callable[[Any], bool]] = None
 ) -> Generator[Any, None, None]:

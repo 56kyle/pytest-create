@@ -26,6 +26,7 @@ from pytest_create.util import find_sub_modules
 from pytest_create.util import get_source_code_filter
 from pytest_create.util import is_object_defined_under_path
 from pytest_create.util import is_src_object
+from pytest_create.util import load_from_file
 from pytest_create.util import load_from_name
 from pytest_create.util import standardize_paths
 from tests.example_package.example_module import ExampleClassA
@@ -287,7 +288,7 @@ class TestLoadFromName:
         )
         assert finder is not None
         monkeypatch.setattr(finder, "find_spec", lambda *args: None)
-        module = load_from_name("non_existent_module", finder)
+        module: Optional[ModuleType] = load_from_name("non_existent_module", finder)
         assert module is None
 
     def test_load_from_name_with_error_on_spec_load(
@@ -300,6 +301,26 @@ class TestLoadFromName:
         assert finder is not None
         monkeypatch.setattr(finder, "find_spec", lambda *args: int(1) / 2)
         module: Optional[ModuleType] = load_from_name("non_existent_module", finder)
+        assert module is None
+
+
+class TestLoadFromFile:
+    def test_load_from_file_with_module(self, example_package_dir: Path) -> None:
+        module: Optional[ModuleType] = load_from_file(
+            example_package_dir / "example_module.py"
+        )
+        assert module is not None
+        assert isinstance(module, ModuleType)
+
+    def test_load_from_file_with_spec_not_found(
+        self, example_package_dir: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(
+            importlib.util, "spec_from_file_location", lambda *args, **kwargs: None
+        )
+        module: Optional[ModuleType] = load_from_file(
+            example_package_dir / "example_module.py"
+        )
         assert module is None
 
 

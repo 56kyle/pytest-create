@@ -154,21 +154,9 @@ def find_modules(
     ):
         module = load_from_name(name, importer)
         if module:
-            if ispkg:
-                yield from find_sub_modules(module.__path__)
             yield module
-
-
-def find_sub_modules(
-    paths: Union[Iterable[SupportsPath], SupportsPath]
-) -> Generator[ModuleType, None, None]:
-    """Iterates over all submodules of the provided module if it is a package."""
-    for sub_module_info in pkgutil.iter_modules(path=standardize_paths(paths)):
-        sub_module: Optional[ModuleType] = load_from_name(
-            sub_module_info.name, sub_module_info.module_finder
-        )
-        if sub_module is not None:
-            yield sub_module
+            if ispkg:
+                yield from find_modules(paths=module.__path__)
 
 
 def load_from_name(

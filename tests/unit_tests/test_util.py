@@ -2,7 +2,6 @@ import builtins
 import importlib.util
 import inspect
 import pkgutil
-from importlib.abc import MetaPathFinder
 from importlib.abc import PathEntryFinder
 from importlib.machinery import ModuleSpec
 from pathlib import Path
@@ -11,7 +10,6 @@ from typing import Any
 from typing import Callable
 from typing import List
 from typing import Optional
-from typing import Union
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
@@ -22,7 +20,6 @@ from pytest_create.util import SourceFileCompatible
 from pytest_create.util import find_module_objects
 from pytest_create.util import find_modules
 from pytest_create.util import find_objects
-from pytest_create.util import find_sub_modules
 from pytest_create.util import get_source_code_filter
 from pytest_create.util import is_object_defined_under_path
 from pytest_create.util import is_src_object
@@ -235,35 +232,6 @@ class TestFindModules:
     def test_find_modules_with_none(self, tmp_path: Path) -> None:
         modules: List[ModuleType] = list(find_modules(tmp_path))
         assert modules == []
-
-
-class TestFindSubModules:
-    def test_find_sub_modules(self, example_package_dir: Path) -> None:
-        pass
-
-    def test_find_sub_modules_with_none(self, example_package_data_dir: Path) -> None:
-        assert {*find_sub_modules(example_package_data_dir)} == set()
-
-    def test_find_sub_modules_with_nested_package(
-        self, example_package_dir: Path
-    ) -> None:
-        modules: List[ModuleType] = [*find_sub_modules(example_package_dir)]
-        assert {*get_names(modules)} == {"example_module", "example_sub_package"}
-
-    def test_find_sub_modules_with_unable_to_load(
-        self, example_package_dir: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        def fake_load_from_name(
-            name: str, finder: Union[PathEntryFinder, MetaPathFinder]
-        ) -> Optional[ModuleType]:
-            if name == "example_module":
-                return None
-            return load_from_name(name=name, finder=finder)
-
-        monkeypatch.setattr(pytest_create.util, "load_from_name", fake_load_from_name)
-
-        modules: List[ModuleType] = [*find_sub_modules(example_package_dir)]
-        assert {*get_names(modules)} == {"example_sub_package"}
 
 
 class TestLoadFromName:

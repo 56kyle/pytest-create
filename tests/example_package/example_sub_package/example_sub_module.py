@@ -3,18 +3,18 @@ import importlib
 from typing import TypeVar
 
 
-example_variable: str = ""
+example_variable_b: str = ""
 
 
-def example_function() -> bool:
+def example_function_b() -> bool:
     """Example function."""
     return True
 
 
-class ExampleClassA:
-    """Example class."""
+class ExampleClassB:
+    """Example class B."""
 
-    def example_method(self) -> bool:
+    def example_method_b(self) -> bool:
         """Example method."""
         return True
 

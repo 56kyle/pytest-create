@@ -4,6 +4,9 @@ import pathlib
 import pytest
 
 
+pytest_plugins = ["pytester", "pytest_create.plugin"]
+
+
 @pytest.fixture(scope="session")
 def tests_dir() -> pathlib.Path:
     """Returns the path to the tests directory."""

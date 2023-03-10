@@ -13,3 +13,12 @@ def example_module_spec(example_package_dir: Path) -> ModuleSpec:
     assert spec is not None
     assert spec.loader is not None
     return spec
+
+
+@pytest.fixture
+def config(pytester: pytest.Pytester) -> pytest.Config:
+    tests_dir: Path = pytester.mkdir("tests")
+    (tests_dir / "unit_tests").mkdir()
+    config: pytest.Config = pytester.parseconfig()
+    config._rootpath = tests_dir / "unit_tests"
+    return config

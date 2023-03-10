@@ -143,30 +143,26 @@ def find_modules(
     paths: Union[Iterable[SupportsPath], SupportsPath],
     prefix: str = "",
 ) -> Generator[ModuleType, None, None]:
-    """Find all objects in a path.
-
-    This function looks for all packages and modules in a path,
-    and then returns all objects within them.
-    """
+    """Recursively yields all packages and modules under a given path."""
     logger.debug(f"Finding objects in {paths}")
-    for importer, name, ispkg in pkgutil.walk_packages(
-        path=standardize_paths(paths), prefix=prefix
+    standard_paths: List[str] = standardize_paths(paths)
+    for importer, name, ispkg in pkgutil.iter_modules(
+        path=standard_paths, prefix=prefix
     ):
-        module = load_from_name(name, importer)
-        if module:
+        module: Optional[ModuleType] = load_from_name(name, importer)
+        if module is not None:
             yield module
             if ispkg:
-                yield from find_modules(paths=module.__path__)
+                yield from find_modules(
+                    paths=module.__path__, prefix=module.__name__ + "."
+                )
 
 
 def load_from_name(
     name: str, finder: Union[PathEntryFinder, MetaPathFinder]
 ) -> Optional[ModuleType]:
-    """Load a module from its name.
-
-    Returns None if the module cannot be loaded.
-    """
-    logger.debug(f"Loading {name}")
+    """Load a module from its name."""
+    # logger.debug(f"Loading {name}")
     with contextlib.suppress(Exception):
         spec: Optional[ModuleSpec] = finder.find_spec(name, None)
         if spec is None or spec.loader is None:
@@ -180,7 +176,7 @@ def load_from_name(
 
 def load_from_file(path: pathlib.Path) -> Optional[ModuleType]:
     """Loads the module located at the given path."""
-    logger.debug(f"Loading {path}")
+    # logger.debug(f"Loading {path}")
     spec: Optional[ModuleSpec] = importlib.util.spec_from_file_location(
         name=path.stem, location=str(path)
     )

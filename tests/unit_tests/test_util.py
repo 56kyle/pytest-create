@@ -226,7 +226,7 @@ class TestFindModules:
         assert set(get_names(modules)) == {
             "example_module",
             "example_sub_package",
-            "example_sub_module",
+            "example_sub_package.example_sub_module",
         }
 
     def test_find_modules_with_none(self, tmp_path: Path) -> None:

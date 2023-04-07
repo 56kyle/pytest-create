@@ -18,7 +18,7 @@ class ObjectDef(TemplateRendered):
 
     docstring: Union[None, DocstringDef, str] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize the object definition."""
         logger.debug(f"{self.__class__.__name__} - {self.name}")
         if isinstance(self.docstring, str):
@@ -26,7 +26,7 @@ class ObjectDef(TemplateRendered):
         elif isinstance(self.docstring, DocstringDef):
             self.docstring: DocstringDef = self.docstring
         else:
-            self.docstring: DocstringDef = DocstringDef(None)
+            self.docstring: DocstringDef = DocstringDef()
 
     def __str__(self) -> str:
         """Return the rendered object definition."""

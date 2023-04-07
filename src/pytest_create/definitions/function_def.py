@@ -2,6 +2,7 @@
 import inspect
 from dataclasses import dataclass
 from dataclasses import field
+from typing import Any
 from typing import ClassVar
 from typing import List
 from typing import Optional
@@ -26,10 +27,10 @@ class FunctionDef(ObjectDef):
 
     signature: inspect.Signature = field(default_factory=inspect.Signature)
     code: Optional[str] = field(default="pass")
-    decorators: Optional[List[str]] = field(default_factory=list)
+    decorators: Optional[List[str]] = field(default=None)
     template: ClassVar[Template] = FUNCTION_TEMPLATE
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Post init method for the FunctionDef class."""
         super().__post_init__()
         self.code: str = self.code if self.code else "pass"
@@ -38,31 +39,40 @@ class FunctionDef(ObjectDef):
         )
 
     @classmethod
-    def as_staticmethod(cls, **kwargs):
+    def as_staticmethod(cls, **kwargs: Any) -> "FunctionDef":
         """Return a FunctionDef as a staticmethod."""
         function_def: FunctionDef = cls(**kwargs)
+        function_def.decorators = (
+            function_def.decorators if function_def.decorators is not None else []
+        )
         if "@staticmethod" not in function_def.decorators:
             function_def.decorators.append("@staticmethod")
         return function_def
 
     @classmethod
-    def as_classmethod(cls, **kwargs) -> "FunctionDef":
+    def as_classmethod(cls, **kwargs: Any) -> "FunctionDef":
         """Return a FunctionDef as a classmethod."""
         function_def: FunctionDef = cls(**kwargs)
+        function_def.decorators = (
+            function_def.decorators if function_def.decorators is not None else []
+        )
         if "@classmethod" not in function_def.decorators:
             function_def.decorators.append("@classmethod")
         if function_def.signature.parameters.get("cls", None) is None:
             function_def.signature = function_def.signature.replace(
-                parameters=[CLS_PARAMETER, *function_def.signature.parameters]
+                parameters=[CLS_PARAMETER, *function_def.signature.parameters.values()]
             )
         return function_def
 
     @classmethod
-    def as_method(cls, **kwargs) -> "FunctionDef":
+    def as_method(cls, **kwargs: Any) -> "FunctionDef":
         """Return a FunctionDef as a method."""
         function_def: FunctionDef = cls(**kwargs)
+        function_def.decorators = (
+            function_def.decorators if function_def.decorators is not None else []
+        )
         if function_def.signature.parameters.get("self", None) is None:
             function_def.signature = function_def.signature.replace(
-                parameters=[SELF_PARAMETER, *function_def.signature.parameters]
+                parameters=[SELF_PARAMETER, *function_def.signature.parameters.values()]
             )
         return function_def

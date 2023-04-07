@@ -16,7 +16,9 @@ from jinja2 import Template
 from loguru import logger
 
 
-T = TypeVar("T", covariant=True)
+T = TypeVar("T")
+KT = TypeVar("KT")
+VT = TypeVar("VT")
 templates: Path = Path(__file__).parent / "templates"
 
 
@@ -39,9 +41,9 @@ class TemplateRendered:
     indent_width: int = 4
     template: ClassVar[Template]
 
-    def __dict__(self) -> Dict[str, Any]:
+    def as_dict(self) -> Dict[Any, Any]:
         """Returns a dictionary of the object's attributes."""
-        non_rendered_dict: Dict[str, Any] = {}
+        non_rendered_dict: Dict[Any, Any] = {}
         for _field in fields(self):
             non_rendered_dict[_field.name] = getattr(self, _field.name)
         return non_rendered_dict
@@ -51,18 +53,30 @@ class TemplateRendered:
         logger.debug(f"render - {self.name}")
         return self.template.render(self._rendered_dict())
 
-    def _rendered_dict(self) -> Dict[str, Any]:
-        non_rendered_dict: Dict[str, Any] = self.__dict__()
+    def _rendered_dict(
+        self,
+    ) -> Union[
+        str,
+        Dict[Any, Any],
+        SupportsRender,
+        MutableMapping[KT, VT],
+        MutableSequence[Dict[Any, Any]],
+    ]:
+        non_rendered_dict: Dict[Any, Any] = self.as_dict()
         return self._recurse_render(non_rendered_dict)
 
     @classmethod
     def _recurse_render(
         cls, obj: T
-    ) -> Union[str, T, MutableMapping[str, T], MutableSequence[T]]:
+    ) -> Union[str, T, SupportsRender, MutableMapping[KT, VT], MutableSequence[T]]:
         if isinstance(obj, SupportsRender):
             return obj.render()
         if isinstance(obj, MutableMapping):
-            return {k: cls._recurse_render(v) for k, v in obj.items()}
+            for k, v in obj.items():
+                obj[k] = cls._recurse_render(v)
+            return obj
         if isinstance(obj, MutableSequence):
-            return [cls._recurse_render(v) for v in obj]
+            for i, v in enumerate(obj):
+                obj[i] = cls._recurse_render(v)
+            return obj
         return obj

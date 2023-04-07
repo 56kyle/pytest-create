@@ -15,7 +15,7 @@ class ImportDef:
     relative_module_path: Path = field(init=False)
     module_parent: str = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Set the module path, relative module path and module parent."""
         self.module_path: Path = Path(self.module.__file__)
         self.relative_module_path: Path = self._find_package_root()

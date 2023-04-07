@@ -1,20 +1,17 @@
 """A module used for rendering the source code of a Python Docstring."""
 import re
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
 class DocstringDef:
     """A class used for rendering the source code of a Python Docstring."""
 
-    value: Optional[str] = None
+    value: str = ""
     docstring_quotes_re: re.Pattern = re.compile(r'["\']+(.*?)["\']+')
 
     def __post_init__(self):
         """Remove the docstring quotes from the value."""
-        if self.value is None:
-            self.value: str = ""
         self.value: str = self._remove_docstring_quotes(self.value)
 
     def __str__(self):
@@ -44,7 +41,7 @@ class DocstringDef:
         return "\n" in self.value
 
     def _format_as_single_line(self) -> str:
-        return f'"""{self.value!r}"""'
+        return '"""' + self.value + '"""'
 
     def _format_as_multi_line(self) -> str:
-        return f'"""{self.value}\n"""'
+        return '"""' + self.value + '\n"""'

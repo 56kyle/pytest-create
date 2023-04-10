@@ -17,7 +17,7 @@ class ImportDef:
 
     def __post_init__(self) -> None:
         """Set the module path, relative module path and module parent."""
-        self.module_path: Path = Path(self.module.__file__)
+        self.module_path: Path = Path(getattr(self.module, "__file__", ""))
         self.relative_module_path: Path = self._find_package_root()
         self.module_parent: str = ".".join(
             self.relative_module_path.with_suffix("").parts[:-1]
@@ -36,9 +36,9 @@ class ImportDef:
         object_module: str = ".".join(self.relative_module_path.with_suffix("").parts)
         if isinstance(self.obj, str):
             return f"from {object_module} import {self.obj}"
-        if getattr(self.obj, "__name__", None) is None:
+        if not hasattr(self.obj, "__name__"):
             raise ValueError(f"Object must have a name to import - {self.obj}")
-        return f"from {object_module} import {self.obj.__name__}"
+        return f"from {object_module} import {getattr(self.obj, '__name__', '')}"
 
     def _find_package_root(self) -> Path:
         current_root: Path = self.module_path

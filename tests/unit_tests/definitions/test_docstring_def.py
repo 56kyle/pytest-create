@@ -3,22 +3,38 @@ import pytest
 from pytest_create.definitions.docstring_def import DocstringDef
 
 
-def test_empty_docstring() -> None:
-    docstring = DocstringDef()
-    assert str(docstring) == ""
-    assert docstring.render() == ""
+@pytest.mark.parametrize(
+    argnames=["docstring_def", "expected"],
+    argvalues=[
+        ["", ""],
+        ["This is a single-line docstring.", '"""This is a single-line docstring."""'],
+        [
+            "This is a\nmulti-line docstring.",
+            '"""This is a\nmulti-line docstring.\n"""',
+        ],
+    ],
+    ids=["empty_docstring", "single_line_docstring", "multi_line_docstring"],
+    indirect=["docstring_def"],
+)
+def test_render(docstring_def: DocstringDef, expected: str) -> None:
+    assert docstring_def.render() == expected
 
 
-def test_single_line_docstring() -> None:
-    docstring = DocstringDef(value="This is a single-line docstring.")
-    assert str(docstring) == '"""This is a single-line docstring."""'
-    assert docstring.render() == '"""This is a single-line docstring."""'
-
-
-def test_multi_line_docstring() -> None:
-    docstring = DocstringDef(value="This is a\nmulti-line docstring.")
-    assert str(docstring) == '"""This is a\nmulti-line docstring.\n"""'
-    assert docstring.render() == '"""This is a\nmulti-line docstring.\n"""'
+@pytest.mark.parametrize(
+    argnames=["docstring_def", "expected"],
+    argvalues=[
+        ["", ""],
+        ["This is a single-line docstring.", '"""This is a single-line docstring."""'],
+        [
+            "This is a\nmulti-line docstring.",
+            '"""This is a\nmulti-line docstring.\n"""',
+        ],
+    ],
+    ids=["empty_docstring", "single_line_docstring", "multi_line_docstring"],
+    indirect=["docstring_def"],
+)
+def test_str(docstring_def: DocstringDef, expected: str) -> None:
+    assert str(docstring_def) == expected
 
 
 def test_from_string() -> None:

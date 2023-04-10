@@ -8,13 +8,13 @@ class DocstringDef:
     """A class used for rendering the source code of a Python Docstring."""
 
     value: str = ""
-    docstring_quotes_re: re.Pattern = re.compile(r'["\']+(.*?)["\']+')
+    docstring_quotes_re: re.Pattern[str] = re.compile(r'["\']+(.*?)["\']+')
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Remove the docstring quotes from the value."""
         self.value: str = self._remove_docstring_quotes(self.value)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the rendered docstring."""
         return self.render()
 

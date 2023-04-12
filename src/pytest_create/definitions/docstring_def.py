@@ -1,6 +1,10 @@
 """A module used for rendering the source code of a Python Docstring."""
 import re
 from dataclasses import dataclass
+from typing import Pattern
+
+
+DOCSTRING_QUOTES_RE: Pattern[str] = re.compile(r'["\']+(.*?)["\']+')
 
 
 @dataclass
@@ -8,7 +12,6 @@ class DocstringDef:
     """A class used for rendering the source code of a Python Docstring."""
 
     value: str = ""
-    docstring_quotes_re: re.Pattern[str] = re.compile(r'["\']+(.*?)["\']+')
 
     def __post_init__(self) -> None:
         """Remove the docstring quotes from the value."""
@@ -34,7 +37,7 @@ class DocstringDef:
     @classmethod
     def _remove_docstring_quotes(cls, value: str) -> str:
         """Remove the docstring quotes from a string."""
-        return re.sub(cls.docstring_quotes_re, r"\1", value)
+        return re.sub(DOCSTRING_QUOTES_RE, r"\1", value)
 
     def is_multi_line(self) -> bool:
         """Return True if the docstring contains a newline."""

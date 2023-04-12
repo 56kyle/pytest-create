@@ -1,4 +1,5 @@
 """A module used for rendering Python objects as source code."""
+import sys
 from dataclasses import dataclass
 from dataclasses import fields
 from pathlib import Path
@@ -14,10 +15,10 @@ from jinja2 import Template
 from loguru import logger
 
 
-try:
+if sys.version_info >= (3, 8):
     from typing import Protocol
     from typing import runtime_checkable
-except ImportError:
+else:
     from typing_extensions import Protocol
     from typing_extensions import runtime_checkable
 

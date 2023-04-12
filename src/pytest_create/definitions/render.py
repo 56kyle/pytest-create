@@ -7,13 +7,13 @@ from typing import ClassVar
 from typing import Dict
 from typing import MutableMapping
 from typing import MutableSequence
-from typing import Protocol
 from typing import TypeVar
 from typing import Union
 from typing import runtime_checkable
 
 from jinja2 import Template
 from loguru import logger
+from typing_extensions import Protocol
 
 
 T = TypeVar("T")

@@ -9,11 +9,17 @@ from typing import MutableMapping
 from typing import MutableSequence
 from typing import TypeVar
 from typing import Union
-from typing import runtime_checkable
 
 from jinja2 import Template
 from loguru import logger
-from typing_extensions import Protocol
+
+
+try:
+    from typing import Protocol
+    from typing import runtime_checkable
+except ImportError:
+    from typing_extensions import Protocol
+    from typing_extensions import runtime_checkable
 
 
 T = TypeVar("T")

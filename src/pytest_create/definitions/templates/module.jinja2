@@ -1,0 +1,14 @@
+{# Render module-level docstring #}
+{%- if docstring %}
+{{ docstring|indent(indent_width) }}
+{% endif %}
+
+{# Render import statements #}
+{%- for import in imports %}
+{{ import }}
+{% endfor %}
+
+{# Render any remaining top-level statements #}
+{%- for definition in definitions %}
+{{ definition }}
+{% endfor %}

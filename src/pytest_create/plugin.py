@@ -1,14 +1,45 @@
 """The pytest-create pytest plugin."""
+import pytest
+
 from pathlib import Path
-from typing import List
+from typing import List, Type, Literal, Sequence, Callable, Any
 from typing import Optional
 from typing import Tuple
 from typing import Union
 
-import pytest
 from loguru import logger
+from _pytest.python import Metafunc
 
+from pytest_create.parametric import SupportsParametrize, get_args, PREDEFINED_TYPE_LITERALS
 from pytest_create.create import create_tests
+
+
+from typing import Optional, List, Type, Union, Sequence, Callable
+
+
+def pytest_generate_tests(metafunc: Metafunc) -> None:
+    for marker in metafunc.definition.iter_markers(name="parametrize_type"):
+        parametrize_types(metafunc, *marker.args, **marker.kwargs)
+
+
+def parametrize_types(
+    metafunc: Metafunc,
+    argnames: Union[str, Sequence[str]],
+    types: List[Type],
+    ids: Optional[Union[Sequence[str], Callable]] = None,
+    *args, **kwargs
+) -> None:
+    argvalues = []
+
+    for arg_type in types:
+        if isinstance(arg_type, SupportsParametrize):
+            if arg_type in PREDEFINED_TYPE_LITERALS:
+                argvalues.append(get_args(PREDEFINED_TYPE_LITERALS[arg_type]))
+            elif getattr(arg_type, "__origin__", None) is Literal:
+                argvalues.append(get_args(arg_type))
+
+    if argnames and argvalues:
+        metafunc.parametrize(argnames=argnames, argvalues=list(zip(*argvalues)), ids=ids, *args, **kwargs)
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -21,6 +52,13 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         const=True,
         default=False,
         help="Create test files for a given package module.",
+    )
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line(
+        "markers",
+        "parametrize_type(argnames, argvalues): Generate parametrized tests for the given argnames and types in argvalues.",
     )
 
 
@@ -92,3 +130,4 @@ def is_in_tests_dir(path: Path) -> bool:
         "tests" in [part.lower() for part in path.parts]
         and path.stem.lower() != "tests"
     )
+

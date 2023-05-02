@@ -1,72 +1,138 @@
-"""A Python module used for parameterizing Literal's and common types"""
-
+"""A Python module used for parameterizing Literal's and common types."""
 import inspect
-import pytest
-import sys
-
-from abc import ABCMeta
+import itertools
 from dataclasses import dataclass
-from _pytest.mark.structures import _ParametrizeMarkDecorator, ParameterSet
-from typing import Type, TypeVar, get_args, Literal, Any, Union, Callable, Sequence, Set, Tuple, Iterable, Optional
+from dataclasses import field
+from enum import Enum
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import FrozenSet
+from typing import Generic
+from typing import List
+from typing import Literal
+from typing import Optional
+from typing import Set
+from typing import Tuple
+from typing import Type
+from typing import TypeVar
+from typing import Union
+from typing import get_args
+from typing import get_origin
+from typing import get_type_hints
 
-# Predefined Literals for common built-in types
-BoolLiteral = Literal[False, True]
-IntLiteral = Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-StrLiteral = Literal["", "a", "b", "c", "1", "2", "3", "example"]
+from pytest_create.type_sets import PREDEFINED_TYPE_SETS
 
-# Predefined type-to-literal mapping
-PREDEFINED_TYPE_LITERALS = {
-    bool: BoolLiteral,
-    int: IntLiteral,
-    str: StrLiteral,
+
+T = TypeVar("T")
+KT = TypeVar("KT")
+VT = TypeVar("VT")
+
+
+DEFAULT_SUM_TYPES: Set[Type] = {Union, Optional, Enum}
+DEFAULT_PRODUCT_TYPES: Set[Type] = {
+    List,
+    list,
+    Set,
+    set,
+    FrozenSet,
+    frozenset,
+    Dict,
+    dict,
+    Tuple,
+    tuple,
 }
 
 
-class SupportsParametrizeMeta(ABCMeta):
-    def __instancecheck__(self, instance: Any) -> bool:
-        # We check if the given instance is a Type or a Literal
-        if not isinstance(instance, type) and not hasattr(instance, "__origin__"):
-            return False
+@dataclass(frozen=True)
+class ExpandedType(Generic[T]):
+    """A dataclass used to represent a type with expanded type arguments."""
 
-        # Check if the given instance is a Type[Literal]
-        if getattr(instance, "__origin__", None) is Literal:
-            return True
-
-        # Check if the given instance is in the predefined type-to-literal mapping
-        if instance in PREDEFINED_TYPE_LITERALS:
-            return True
-
-        return False
+    primary_type: Type[T]
+    type_args: Tuple[Union[Type, "ExpandedType"], ...]
 
 
-class SupportsParametrize(metaclass=SupportsParametrizeMeta):
-    pass
+@dataclass(frozen=True)
+class Config:
+    """A dataclass used to configure the expansion of types."""
+
+    max_elements: int = 5
+    max_depth: int = 5
+    custom_handlers: Dict[
+        Type, Callable[[Type[T], "Config"], Set[Union[T, ExpandedType]]]
+    ] = field(default_factory=dict)
 
 
-@dataclass
-class ParametricCall:
-    argnames: Union[str, Sequence[str]]
-    argvalues: Iterable[Union[ParameterSet, Sequence[object], object]]
-    ids: Optional[
-        Union[
-            Iterable[Union[None, str, float, int, bool]],
-            Callable[[Any], Optional[object]],
-        ]
-    ]
+DEFAULT_CONFIG: Config = Config()
 
 
-def get_parametric_decorators(obj: Callable[..., Any]) -> Set[_ParametrizeMarkDecorator]:
+def return_self(arg: T, config: Config = None) -> T:
+    """Returns the provided argument."""
+    return {arg}
 
 
-if __name__ == '__main__':
-    # Test cases
-    print(isinstance(bool, SupportsParametrize))
-    print(isinstance(Literal[False, True], SupportsParametrize))
-    print(not isinstance(True, SupportsParametrize))
-    print(not isinstance("example", SupportsParametrize))
+def expand_type(
+    type_arg: Type[T], config: Config = DEFAULT_CONFIG
+) -> Set[Union[Type, ExpandedType]]:
+    """Expands the provided type into the set of all possible subtype combinations."""
+    origin: Any = get_origin(type_arg) or type_arg
+
+    if origin in PREDEFINED_TYPE_SETS:
+        return {origin}
+
+    type_handlers: Dict[
+        Type, Callable[[Type[T], Config], Set[Union[T, ExpandedType]]]
+    ] = {
+        Literal: return_self,
+        Ellipsis: return_self,
+        **{sum_type: expand_sum_type for sum_type in DEFAULT_SUM_TYPES},
+        **{product_type: expand_product_type for product_type in DEFAULT_PRODUCT_TYPES},
+    }
+
+    # Add custom handlers from configuration
+    type_handlers.update(config.custom_handlers)
+
+    if origin in type_handlers:
+        return type_handlers[origin](type_arg, config)
+
+    # Check if a custom class has type annotations
+    if (
+        inspect.isclass(type_arg)
+        or inspect.isfunction(type_arg)
+        or inspect.ismethod(type_arg)
+        or inspect.ismodule(type_arg)
+    ):
+        type_hints: Dict[str, Type] = get_type_hints(type_arg)
+        type_hints.pop("return", None)
+        type_hint_sets: Set[Set[Union[T, ExpandedType]]] = {
+            *itertools.product(
+                expand_type(type_hint, config) for type_hint in type_hints.values()
+            )
+        }
+        if type_hints:
+            return {
+                ExpandedType(type_arg, tuple(type_hint_set))
+                for type_hint_set in type_hint_sets
+            }
+    return set()
 
 
+def expand_sum_type(type_arg: Type[T], config: Config) -> Set[Union[T, ExpandedType]]:
+    """Expands a sum type into the set of all possible subtype combinations."""
+    return {
+        x
+        for x in itertools.chain.from_iterable(
+            expand_type(arg, config) for arg in get_args(type_arg)
+        )
+    }
 
 
-
-
+def expand_product_type(
+    type_arg: Type[T], config: Config
+) -> Set[Union[T, ExpandedType]]:
+    """Expands a product type into the set of all possible subtype combinations."""
+    origin: Any = get_origin(type_arg) or type_arg
+    args: Tuple[Any, ...] = get_args(type_arg)
+    sets: List[Set[Union[T, ExpandedType]]] = [expand_type(arg, config) for arg in args]
+    product_sets: Tuple[Union[T, ExpandedType], ...] = tuple(itertools.product(*sets))
+    return {ExpandedType(origin, tuple(product_set)) for product_set in product_sets}

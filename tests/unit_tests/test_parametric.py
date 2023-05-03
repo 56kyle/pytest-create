@@ -142,7 +142,7 @@ def test_expand_type_with_recursive_types(type_arg, expected):
     ],
     ids=lambda x: str(x),
 )
-def test_expand_types_with_combinations(type_arg, expected):
+def test_expand_type_with_combinations(type_arg, expected):
     config = Config(max_elements=5)
     assert expand_type(type_arg, config) == {*expected}
 

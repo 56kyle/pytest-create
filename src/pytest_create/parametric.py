@@ -1,5 +1,4 @@
 """A Python module used for parameterizing Literal's and common types."""
-import inspect
 import itertools
 from dataclasses import dataclass
 from dataclasses import field
@@ -19,14 +18,11 @@ from typing import TypeVar
 from typing import Union
 from typing import get_args
 from typing import get_origin
-from typing import get_type_hints
 
 from pytest_create.type_sets import PREDEFINED_TYPE_SETS
 
 
 T = TypeVar("T")
-KT = TypeVar("KT")
-VT = TypeVar("VT")
 
 
 DEFAULT_SUM_TYPES: Set[Type] = {Union, Optional, Enum}
@@ -95,25 +91,6 @@ def expand_type(
     if origin in type_handlers:
         return type_handlers[origin](type_arg, config)
 
-    # Check if a custom class has type annotations
-    if (
-        inspect.isclass(type_arg)
-        or inspect.isfunction(type_arg)
-        or inspect.ismethod(type_arg)
-        or inspect.ismodule(type_arg)
-    ):
-        type_hints: Dict[str, Type] = get_type_hints(type_arg)
-        type_hints.pop("return", None)
-        type_hint_sets: Set[Set[Union[T, ExpandedType]]] = {
-            *itertools.product(
-                expand_type(type_hint, config) for type_hint in type_hints.values()
-            )
-        }
-        if type_hints:
-            return {
-                ExpandedType(type_arg, tuple(type_hint_set))
-                for type_hint_set in type_hint_sets
-            }
     return set()
 
 

@@ -20,6 +20,23 @@ from pytest_create.parametric import expand_type
 T = TypeVar("T")
 
 
+class DummyClass:
+    pass
+
+
+@pytest.mark.parametrize(
+    argnames=["type_arg", "expected"],
+    argvalues=[
+        ((DummyClass), {DummyClass}),
+    ],
+)
+def test_expand_type_with_non_supported_type(
+    type_arg: Type[T], expected: Set[Type[T]]
+) -> None:
+    config = Config(max_elements=5)
+    assert expand_type(type_arg, config) == expected
+
+
 @pytest.mark.parametrize(
     argnames=["type_arg", "expected"],
     argvalues=[

@@ -91,7 +91,7 @@ def expand_type(
     if origin in type_handlers:
         return type_handlers[origin](type_arg, config)
 
-    return set()
+    return {type_arg}
 
 
 def expand_sum_type(type_arg: Type[T], config: Config) -> Set[Union[T, ExpandedType]]:

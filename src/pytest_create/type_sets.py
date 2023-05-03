@@ -219,8 +219,8 @@ PREDEFINED_TYPE_SETS: Dict[Type[T], Set[T]] = {
     str: StrParams,
     bytes: BytesParams,
     type(None): {None},
-}
-PREDEFINED_TYPE_SETS[type] = {*PREDEFINED_TYPE_SETS.keys()}
-PREDEFINED_TYPE_SETS[Any] = {
-    iter(type_set for type_set in PREDEFINED_TYPE_SETS.values())
+    type(...): {Ellipsis},
+    type(NotImplemented): {NotImplemented},
+    type(Any): {Any},
+    type: {type},
 }

@@ -8,6 +8,7 @@ from typing import Callable
 from typing import Dict
 from typing import FrozenSet
 from typing import Generic
+from typing import Iterable
 from typing import List
 from typing import Literal
 from typing import Optional
@@ -25,8 +26,8 @@ from pytest_create.type_sets import PREDEFINED_TYPE_SETS
 T = TypeVar("T")
 
 
-DEFAULT_SUM_TYPES: Set[Type] = {Union, Optional, Enum}
-DEFAULT_PRODUCT_TYPES: Set[Type] = {
+DEFAULT_SUM_TYPES: Set[Any] = {Union, Optional, Enum}
+DEFAULT_PRODUCT_TYPES: Set[Any] = {
     List,
     list,
     Set,
@@ -45,7 +46,7 @@ class ExpandedType(Generic[T]):
     """A dataclass used to represent a type with expanded type arguments."""
 
     primary_type: Type[T]
-    type_args: Tuple[Union[Type, "ExpandedType"], ...]
+    type_args: Tuple[Union[Any, "ExpandedType[Any]"], ...]
 
 
 @dataclass(frozen=True)
@@ -55,21 +56,21 @@ class Config:
     max_elements: int = 5
     max_depth: int = 5
     custom_handlers: Dict[
-        Type, Callable[[Type[T], "Config"], Set[Union[T, ExpandedType]]]
+        Any, Callable[[Type[T], "Config"], Set[Union[Any, ExpandedType[T]]]]
     ] = field(default_factory=dict)
 
 
 DEFAULT_CONFIG: Config = Config()
 
 
-def return_self(arg: T, config: Config = None) -> T:
+def return_self(arg: T, *_: Any) -> Set[T]:
     """Returns the provided argument."""
     return {arg}
 
 
 def expand_type(
-    type_arg: Type[T], config: Config = DEFAULT_CONFIG
-) -> Set[Union[Type, ExpandedType]]:
+    type_arg: Union[Any, Type[T]], config: Config = DEFAULT_CONFIG
+) -> Set[Union[Any, ExpandedType[T]]]:
     """Expands the provided type into the set of all possible subtype combinations."""
     origin: Any = get_origin(type_arg) or type_arg
 
@@ -77,7 +78,7 @@ def expand_type(
         return {origin}
 
     type_handlers: Dict[
-        Type, Callable[[Type[T], Config], Set[Union[T, ExpandedType]]]
+        Any, Callable[[Type[T], Config], Set[Union[Any, ExpandedType[T]]]]
     ] = {
         Literal: return_self,
         Ellipsis: return_self,
@@ -94,11 +95,12 @@ def expand_type(
     return {type_arg}
 
 
-def expand_sum_type(type_arg: Type[T], config: Config) -> Set[Union[T, ExpandedType]]:
+def expand_sum_type(
+    type_arg: Type[T], config: Config
+) -> Set[Union[Any, ExpandedType[T]]]:
     """Expands a sum type into the set of all possible subtype combinations."""
     return {
-        x
-        for x in itertools.chain.from_iterable(
+        *itertools.chain.from_iterable(
             expand_type(arg, config) for arg in get_args(type_arg)
         )
     }
@@ -106,10 +108,14 @@ def expand_sum_type(type_arg: Type[T], config: Config) -> Set[Union[T, ExpandedT
 
 def expand_product_type(
     type_arg: Type[T], config: Config
-) -> Set[Union[T, ExpandedType]]:
+) -> Set[Union[Any, ExpandedType[T]]]:
     """Expands a product type into the set of all possible subtype combinations."""
     origin: Any = get_origin(type_arg) or type_arg
     args: Tuple[Any, ...] = get_args(type_arg)
-    sets: List[Set[Union[T, ExpandedType]]] = [expand_type(arg, config) for arg in args]
-    product_sets: Tuple[Union[T, ExpandedType], ...] = tuple(itertools.product(*sets))
+    sets: List[Set[Union[Any, ExpandedType[T]]]] = [
+        expand_type(arg, config) for arg in args
+    ]
+    product_sets: Tuple[Iterable[Union[Any, ExpandedType[T]]], ...] = tuple(
+        itertools.product(*sets)
+    )
     return {ExpandedType(origin, tuple(product_set)) for product_set in product_sets}

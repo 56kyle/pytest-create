@@ -1,9 +1,11 @@
 from types import NoneType
+from typing import Any
 from typing import Dict
 from typing import FrozenSet
 from typing import List
 from typing import Literal
 from typing import Optional
+from typing import Sequence
 from typing import Set
 from typing import Tuple
 from typing import Type
@@ -33,8 +35,8 @@ class DummyClass:
 def test_expand_type_with_non_supported_type(
     type_arg: Type[T], expected: Set[Type[T]]
 ) -> None:
-    config = Config(max_elements=5)
-    assert expand_type(type_arg, config) == expected
+
+    assert expand_type(type_arg) == expected
 
 
 @pytest.mark.parametrize(
@@ -50,8 +52,8 @@ def test_expand_type_with_non_supported_type(
     ],
 )
 def test_base_types(type_arg: Type[T], expected: Set[Type[T]]) -> None:
-    config = Config(max_elements=5)
-    assert expand_type(type_arg, config) == expected
+
+    assert expand_type(type_arg) == expected
 
 
 @pytest.mark.parametrize(
@@ -77,9 +79,11 @@ def test_base_types(type_arg: Type[T], expected: Set[Type[T]]) -> None:
     ],
     ids=lambda x: str(x),
 )
-def test_expand_type_with_product_types(type_arg, expected):
-    config = Config(max_elements=5)
-    assert expand_type(type_arg, config) == {*expected}
+def test_expand_type_with_product_types(
+    type_arg: Type[T], expected: Sequence[Any]
+) -> None:
+
+    assert expand_type(type_arg) == {*expected}
 
 
 @pytest.mark.parametrize(
@@ -94,9 +98,9 @@ def test_expand_type_with_product_types(type_arg, expected):
     ],
     ids=lambda x: str(x),
 )
-def test_expand_type_with_sum_types(type_arg, expected):
-    config = Config(max_elements=5)
-    assert expand_type(type_arg, config) == {*expected}
+def test_expand_type_with_sum_types(type_arg: Type[T], expected: Sequence[Any]) -> None:
+
+    assert expand_type(type_arg) == {*expected}
 
 
 @pytest.mark.parametrize(
@@ -116,9 +120,11 @@ def test_expand_type_with_sum_types(type_arg, expected):
     ],
     ids=lambda x: str(x),
 )
-def test_expand_type_with_recursive_types(type_arg, expected):
-    config = Config(max_elements=5)
-    assert expand_type(type_arg, config) == {*expected}
+def test_expand_type_with_recursive_types(
+    type_arg: Type[T], expected: Sequence[Any]
+) -> None:
+
+    assert expand_type(type_arg) == {*expected}
 
 
 @pytest.mark.parametrize(
@@ -159,36 +165,36 @@ def test_expand_type_with_recursive_types(type_arg, expected):
     ],
     ids=lambda x: str(x),
 )
-def test_expand_type_with_combinations(type_arg, expected):
-    config = Config(max_elements=5)
-    assert expand_type(type_arg, config) == {*expected}
+def test_expand_type_with_combinations(
+    type_arg: Type[T], expected: Sequence[Any]
+) -> None:
+    assert expand_type(type_arg) == {*expected}
 
 
-def test_optional_expansion():
-    config = Config(max_elements=5)
-    result = expand_type(Optional[int], config)
+def test_optional_expansion() -> None:
+    result: Set[Union[Any, ExpandedType[Any]]] = expand_type(Optional[int])
     assert NoneType in result
     assert int in result
 
 
-def test_union_expansion():
-    config = Config(max_elements=5)
-    result = expand_type(Union[int, str], config)
+def test_union_expansion() -> None:
+    result: Set[Union[Any, ExpandedType[Any]]] = expand_type(Union[int, str])
     assert NoneType not in result
     assert int in result
     assert str in result
 
 
-def test_expanded_type():
-    config = Config(max_elements=5)
-    result = expand_type(Dict[str, Optional[int]], config)
+def test_expanded_type() -> None:
+    result: Set[Union[Any, ExpandedType[Any]]] = expand_type(Dict[str, Optional[int]])
     assert ExpandedType(dict, (str, int)) in result
     assert ExpandedType(dict, (str, NoneType)) in result
 
 
-def test_custom_handler():
-    def custom_handler(type_arg: Type, config: Config) -> Set[Union[T, ExpandedType]]:
+def test_custom_handler() -> None:
+    def custom_handler(
+        type_arg: Type[T], config: Config
+    ) -> Set[Union[Any, ExpandedType[T]]]:
         return {int}
 
-    config = Config(max_elements=5, custom_handlers={list: custom_handler})
+    config: Config = Config(max_elements=5, custom_handlers={list: custom_handler})
     assert expand_type(List[str], config) == {int}

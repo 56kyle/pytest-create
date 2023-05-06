@@ -6,7 +6,7 @@ from typing import Type
 from typing import TypeVar
 
 
-T = TypeVar("T")
+T = TypeVar("T", bound=Any)
 
 
 BoolParams: Set[bool] = {True, False}
@@ -211,7 +211,8 @@ BytesParams: Set[bytes] = {
     b"\xFE",
 }
 
-PREDEFINED_TYPE_SETS: Dict[Type[T], Set[T]] = {
+
+PREDEFINED_TYPE_SETS: Dict[Type[Any], Set[Any]] = {
     bool: BoolParams,
     int: IntParams,
     float: FloatParams,

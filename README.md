@@ -1,4 +1,4 @@
-# pytest-create
+# pytest-create (Deprecated, Please visit [https://github.com/56kyle/pytest-static](pytest-static) instead)
 
 [![PyPI](https://img.shields.io/pypi/v/pytest-create.svg)][pypi_]
 [![Status](https://img.shields.io/pypi/status/pytest-create.svg)][status]
